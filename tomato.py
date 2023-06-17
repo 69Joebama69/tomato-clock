@@ -14,28 +14,33 @@
 import sys
 import time
 import subprocess
+import beepy
+import random
 
 WORK_MINUTES = 25
 BREAK_MINUTES = 5
+LONG_BREAK_MINUTES = 15
+TOMATOS = 4
 
 
 def main():
+
     try:
         if len(sys.argv) <= 1:
-            print(f'🍅 tomato {WORK_MINUTES} minutes. Ctrl+C to exit')
-            tomato(WORK_MINUTES, 'It is time to take a break')
-            print(f'🛀 break {BREAK_MINUTES} minutes. Ctrl+C to exit')
-            tomato(BREAK_MINUTES, 'It is time to work')
+            tomato(WORK_MINUTES, BREAK_MINUTES, TOMATOS)
 
-        elif sys.argv[1] == '-t':
-            minutes = int(sys.argv[2]) if len(sys.argv) > 2 else WORK_MINUTES
-            print(f'🍅 tomato {minutes} minutes. Ctrl+C to exit')
-            tomato(minutes, 'It is time to take a break')
+        elif len(sys.argv) == 3 and sys.argv[1] == '-t':
+            minutes = int(sys.argv[2])
+            tomato(minutes, BREAK_MINUTES, TOMATOS)
 
-        elif sys.argv[1] == '-b':
-            minutes = int(sys.argv[2]) if len(sys.argv) > 2 else BREAK_MINUTES
-            print(f'🛀 break {minutes} minutes. Ctrl+C to exit')
-            tomato(minutes, 'It is time to work')
+        elif len(sys.argv) == 3 and sys.argv[1] == '-b':
+            minutes = int(sys.argv[2])
+            tomato(WORK_MINUTES, minutes, TOMATOS)
+
+        elif len(sys.argv) == 5:
+            work_minutes = int(sys.argv[2])
+            break_minutes = int(sys.argv[4])
+            tomato(work_minutes, break_minutes, TOMATOS)
 
         elif sys.argv[1] == '-h':
             help()
@@ -50,7 +55,15 @@ def main():
         exit(1)
 
 
-def tomato(minutes, notify_msg):
+def tomato(work_minutes, break_minutes, tomatos):
+    for tomato in range(TOMATOS):
+        print('\r\r', f'{"🍅" * (tomato+1)}/{"🍅" * tomatos} Ctrl+C to exit')
+        countdown(work_minutes)
+        notify_me("It is time to take a break")
+        countdown(break_minutes)
+        notify_me("It is time to work")
+
+def countdown(minutes):
     start_time = time.perf_counter()
     while True:
         diff_seconds = int(round(time.perf_counter() - start_time))
@@ -63,8 +76,6 @@ def tomato(minutes, notify_msg):
         duration = min(minutes, 25)
         progressbar(diff_seconds, minutes * 60, duration, countdown)
         time.sleep(1)
-
-    notify_me(notify_msg)
 
 
 def progressbar(curr, total, duration=10, extra=''):
@@ -99,6 +110,7 @@ def notify_me(msg):
         elif sys.platform.startswith('linux'):
             # ubuntu desktop notification
             subprocess.Popen(["notify-send", '🍅', msg])
+            beepy.beep(random.randint(1, 7))
         else:
             # windows?
             # TODO: windows notification
@@ -113,11 +125,9 @@ def help():
     appname = sys.argv[0]
     appname = appname if appname.endswith('.py') else 'tomato'  # tomato is pypi package
     print('====== 🍅 Tomato Clock =======')
-    print(f'{appname}         # start a {WORK_MINUTES} minutes tomato clock + {BREAK_MINUTES} minutes break')
-    print(f'{appname} -t      # start a {WORK_MINUTES} minutes tomato clock')
     print(f'{appname} -t <n>  # start a <n> minutes tomato clock')
-    print(f'{appname} -b      # take a {BREAK_MINUTES} minutes break')
-    print(f'{appname} -b <n>  # take a <n> minutes break')
+    print(f'{appname} -b <n>  # start a tomato clock with <n> minutes break')
+    print(f"{appname} -t <n> -b <m>  # start a <n> minutes tomato clock with <m> minutes break")
     print(f'{appname} -h      # help')
 
 
